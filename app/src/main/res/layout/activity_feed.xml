@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#FFFFFF"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <!-- Top Bar with Logout Icon -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="start|center_vertical"
+        android:orientation="horizontal">
+
+        <ImageButton
+            android:id="@+id/logout_button"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Logout"
+            android:src="@drawable/logout"
+            app:tint="#000000" />
+    </LinearLayout>
+
+    <!-- H1 Title (will display Hello, {username}) -->
+    <TextView
+        android:id="@+id/feed_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="24dp"
+        android:layout_marginBottom="24dp"
+        android:text="Feed Page"
+        android:textColor="#000000"
+        android:textSize="32sp"
+        android:textStyle="bold" />
+
+    <!-- Football Image -->
+    <ImageView
+        android:id="@+id/football_image"
+        android:layout_width="200dp"
+        android:layout_height="200dp"
+        android:layout_gravity="center_horizontal"
+        android:contentDescription="Football Image"
+        android:scaleType="fitCenter"
+        android:src="@drawable/football" />
+</LinearLayout>

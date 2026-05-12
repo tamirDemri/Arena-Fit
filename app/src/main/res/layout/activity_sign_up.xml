@@ -7,7 +7,7 @@
     android:layout_height="match_parent"
     android:fillViewport="true"
     android:background="#F8FAFC"
-    tools:context=".MainActivity">
+    tools:context=".SignUp">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -29,7 +29,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="ArenaFit"
+                android:text="Create Account"
                 android:textSize="28sp"
                 android:textStyle="bold"
                 android:textColor="#111827"
@@ -40,7 +40,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Sign in to continue"
+                android:text="Sign up to continue"
                 android:textSize="14sp"
                 android:textColor="#6B7280"
                 android:layout_gravity="center_horizontal"
@@ -48,17 +48,31 @@
 
             <!-- Username -->
             <EditText
-                android:id="@+id/email"
+                android:id="@+id/userName"
                 android:layout_width="match_parent"
                 android:layout_height="56dp"
                 android:layout_marginBottom="16dp"
                 android:background="@android:drawable/edit_text"
-                android:hint="email"
+                android:hint="Username"
                 android:paddingStart="16dp"
                 android:paddingEnd="16dp"
                 android:textColor="#111827"
                 android:textColorHint="#9CA3AF"
                 android:inputType="textPersonName" />
+
+            <!-- Email -->
+            <EditText
+                android:id="@+id/email"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginBottom="16dp"
+                android:background="@android:drawable/edit_text"
+                android:hint="Email address"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:textColor="#111827"
+                android:textColorHint="#9CA3AF"
+                android:inputType="textEmailAddress" />
 
             <!-- Password -->
             <EditText
@@ -74,12 +88,12 @@
                 android:textColorHint="#9CA3AF"
                 android:inputType="textPassword" />
 
-            <!-- Sign In Button -->
+            <!-- Sign Up Button -->
             <Button
-                android:id="@+id/sign_in_button"
+                android:id="@+id/sign_up_button"
                 android:layout_width="match_parent"
                 android:layout_height="56dp"
-                android:text="Sign In"
+                android:text="Sign Up"
                 android:textAllCaps="false"
                 android:textSize="16sp"
                 android:textStyle="bold"
@@ -87,12 +101,12 @@
                 android:textColor="@android:color/white"
                 android:layout_marginBottom="12dp" />
 
-            <!-- Sign Up Button -->
+            <!-- Go Back Button -->
             <Button
-                android:id="@+id/sign_up_button"
+                android:id="@+id/go_back"
                 android:layout_width="match_parent"
                 android:layout_height="56dp"
-                android:text="Create Account"
+                android:text="Go Back"
                 android:textAllCaps="false"
                 android:textSize="16sp"
                 android:backgroundTint="#E5E7EB"

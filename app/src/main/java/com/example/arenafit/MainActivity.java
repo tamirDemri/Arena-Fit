@@ -1,48 +1,92 @@
 package com.example.arenafit;
 
+import android.content.Intent;
 import android.os.Bundle;
-import android.view.View;
+import android.text.TextUtils;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 
-public class MainActivity extends AppCompatActivity implements View.OnClickListener{
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 
-    private EditText username;
-    private EditText password;
+public class MainActivity extends AppCompatActivity {
+
+    private EditText emailInput;
+    private EditText passwordInput;
 
     private Button signin;
     private Button signup;
+
+    private FirebaseAuth mAuth;
+    private DatabaseReference database;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
         EdgeToEdge.enable(this);
+        setContentView(R.layout.activity_main);
 
-        username = findViewById(R.id.userName); // linking between var and visual
-        password = findViewById(R.id.password);
+        // Updated variable names (keeping your XML IDs as they are)
+        emailInput = findViewById(R.id.email);
+        passwordInput = findViewById(R.id.password);
         signin = findViewById(R.id.sign_in_button);
         signup = findViewById(R.id.sign_up_button);
 
-        signin.setOnClickListener(this); // for the button to listen
-        signup.setOnClickListener(this);
+        mAuth = FirebaseAuth.getInstance();
+        database = FirebaseDatabase.getInstance().getReference("users");
+
+        signin.setOnClickListener(view -> loginUser());
+        signup.setOnClickListener(view -> startActivity(new Intent(MainActivity.this, SignUp.class)));
     }
 
-    @Override
-    public void onClick(View view)
-    {
-        if(view == signin)
-        {
-            //sign in
+    private void loginUser() {
+        String email = emailInput.getText().toString().trim();
+        String password = passwordInput.getText().toString().trim();
+
+        if (TextUtils.isEmpty(email)) {
+            emailInput.setError("Email is required");
+            return;
         }
-        else if(view == signup)
-        {
-            //sign up
+        if (TextUtils.isEmpty(password)) {
+            passwordInput.setError("Password is required");
+            return;
         }
+
+        // STEP 1: Authenticate with EMAIL
+        mAuth.signInWithEmailAndPassword(email, password)
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        FirebaseUser user = mAuth.getCurrentUser();
+                        if (user != null) {
+                            // STEP 2: Fetch the USERNAME from the Database using the UID
+                            fetchUsernameAndProceed(user.getUid());
+                        }
+                    } else {
+                        Toast.makeText(MainActivity.this, "Login Failed: Bad Credentials", Toast.LENGTH_LONG).show();
+                    }
+                });
+    }
+
+    private void fetchUsernameAndProceed(String uid) {
+        database.child(uid).child("username").get().addOnCompleteListener(dbTask -> {
+            String displayName = "User"; // Default fallback
+
+            if (dbTask.isSuccessful() && dbTask.getResult().exists()) {
+                displayName = dbTask.getResult().getValue(String.class);
+            }
+
+            // STEP 3: Pass the USERNAME (the display name) to the next screen
+            Intent intent = new Intent(MainActivity.this, HomeActivity.class);
+            intent.putExtra("username", displayName);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            startActivity(intent);
+            finish();
+        });
     }
 }
