@@ -11,6 +11,7 @@ import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
 
+import com.google.android.material.button.MaterialButton;
 import com.google.firebase.auth.FirebaseAuth;
 
 public class FeedActivity extends AppCompatActivity {
@@ -18,6 +19,7 @@ public class FeedActivity extends AppCompatActivity {
     private FirebaseAuth mAuth;
     private ImageButton logoutButton;
     private TextView feedTitle;
+    private MaterialButton getStartedButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -27,21 +29,29 @@ public class FeedActivity extends AppCompatActivity {
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+            v.setPadding(systemBars.left, 0, systemBars.right, systemBars.bottom);
             return insets;
         });
 
         mAuth = FirebaseAuth.getInstance();
         feedTitle = findViewById(R.id.feed_title);
         logoutButton = findViewById(R.id.logout_button);
+        getStartedButton = findViewById(R.id.get_started_button);
 
-        // Get username from intent
         String username = getIntent().getStringExtra("username");
-        feedTitle.setText("Hello, " + username);
+        feedTitle.setText("Hello, " + (username == null ? "athlete" : username));
 
         logoutButton.setOnClickListener(v -> {
             mAuth.signOut();
             Intent intent = new Intent(FeedActivity.this, MainActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+            startActivity(intent);
+            finish();
+        });
+
+        getStartedButton.setOnClickListener(v -> {
+            Intent intent = new Intent(FeedActivity.this, HomeActivity.class);
+            intent.putExtra("username", username);
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
             startActivity(intent);
             finish();
