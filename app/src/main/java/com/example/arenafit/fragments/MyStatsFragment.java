@@ -1,6 +1,14 @@
 package com.example.arenafit.fragments;
 
+import android.Manifest;
+import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.CountDownTimer;
 import android.text.TextUtils;
@@ -12,9 +20,12 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AlertDialog;
+import androidx.core.content.ContextCompat;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
@@ -47,6 +58,7 @@ public class MyStatsFragment extends Fragment
         implements WorkoutAdapter.OnItemClickListener, View.OnClickListener {
 
     private static final long WEEK_MS = 7L * 24L * 60L * 60L * 1000L;
+    private static final double STRIDE_METERS_PER_STEP = 1000.0 / 1250.0;
 
     private TextView chipPushups, chipPlank, chipRunning;
     private TextInputLayout valueInputLayout;
@@ -69,7 +81,34 @@ public class MyStatsFragment extends Fragment
     private CountDownTimer activeTimer;
     private AlertDialog activeDialog;
 
+    private SensorManager sensorManager;
+    private SensorEventListener activeSensorListener;
+
+    private ActivityResultLauncher<String> activityRecognitionLauncher;
+    private String pendingRunningKey;
+    private Workout pendingRunningWorkout;
+
     public MyStatsFragment() {}
+
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        activityRecognitionLauncher = registerForActivityResult(
+                new ActivityResultContracts.RequestPermission(),
+                granted -> {
+                    String key = pendingRunningKey;
+                    Workout workout = pendingRunningWorkout;
+                    pendingRunningKey = null;
+                    pendingRunningWorkout = null;
+                    if (!isAdded()) return;
+                    if (granted && key != null && workout != null) {
+                        openRunningTracker(key, workout);
+                    } else if (!granted) {
+                        Toast.makeText(requireContext(),
+                                "Step counter permission required", Toast.LENGTH_SHORT).show();
+                    }
+                });
+    }
 
     @Nullable
     @Override
@@ -123,6 +162,10 @@ public class MyStatsFragment extends Fragment
         if (activeTimer != null) {
             activeTimer.cancel();
             activeTimer = null;
+        }
+        if (sensorManager != null && activeSensorListener != null) {
+            sensorManager.unregisterListener(activeSensorListener);
+            activeSensorListener = null;
         }
         if (activeDialog != null && activeDialog.isShowing()) {
             activeDialog.dismiss();
@@ -310,24 +353,43 @@ public class MyStatsFragment extends Fragment
         Workout w = entry.workout;
 
         if (w.isCompleted()) {
-            if (Workout.TYPE_PLANK.equals(w.type)) {
-                DatabaseReference newRef = workoutsRef.push();
-                String newKey = newRef.getKey();
-                Workout copy = new Workout(w.type, w.userTarget, 0.0, System.currentTimeMillis());
-                newRef.setValue(copy).addOnSuccessListener(unused -> {
-                    if (isAdded() && newKey != null) openPlankTimer(newKey, copy);
-                });
-            } else {
-                Toast.makeText(requireContext(), "Under construction", Toast.LENGTH_SHORT).show();
-            }
+            DatabaseReference newRef = workoutsRef.push();
+            String newKey = newRef.getKey();
+            Workout copy = new Workout(w.type, w.userTarget, 0.0, System.currentTimeMillis());
+            newRef.setValue(copy).addOnSuccessListener(unused -> {
+                if (!isAdded() || newKey == null) return;
+                startTrackerFor(newKey, copy);
+            });
             return;
         }
 
+        startTrackerFor(entry.key, w);
+    }
+
+    private void startTrackerFor(String key, Workout w) {
         if (Workout.TYPE_PLANK.equals(w.type)) {
-            openPlankTimer(entry.key, w);
-        } else {
-            Toast.makeText(requireContext(), "Under construction", Toast.LENGTH_SHORT).show();
+            openPlankTimer(key, w);
+        } else if (Workout.TYPE_PUSHUPS.equals(w.type)) {
+            openPushupCounter(key, w);
+        } else if (Workout.TYPE_RUNNING.equals(w.type)) {
+            startRunningWithPermissionGate(key, w);
         }
+    }
+
+    private void startRunningWithPermissionGate(String key, Workout w) {
+        if (hasActivityRecognitionPermission()) {
+            openRunningTracker(key, w);
+        } else {
+            pendingRunningKey = key;
+            pendingRunningWorkout = w;
+            activityRecognitionLauncher.launch(Manifest.permission.ACTIVITY_RECOGNITION);
+        }
+    }
+
+    private boolean hasActivityRecognitionPermission() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) return true;
+        return ContextCompat.checkSelfPermission(requireContext(),
+                Manifest.permission.ACTIVITY_RECOGNITION) == PackageManager.PERMISSION_GRANTED;
     }
 
     private void openPlankTimer(String key, Workout w) {
@@ -390,11 +452,166 @@ public class MyStatsFragment extends Fragment
         timer.start();
     }
 
+    private void openPushupCounter(String key, Workout w) {
+        if (sensorManager == null) {
+            sensorManager = (SensorManager) requireContext().getSystemService(Context.SENSOR_SERVICE);
+        }
+        Sensor proximity = sensorManager == null ? null
+                : sensorManager.getDefaultSensor(Sensor.TYPE_PROXIMITY);
+        if (proximity == null) {
+            Toast.makeText(requireContext(), "Proximity sensor not available", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        double startAccomplish = w.userAccomplish;
+        double target = w.userTarget;
+        if (target - startAccomplish <= 0) return;
+
+        LayoutInflater inflater = LayoutInflater.from(requireContext());
+        View content = inflater.inflate(R.layout.dialog_plank_timer, null, false);
+        TextView titleText = content.findViewById(R.id.timerTitle);
+        TextView counterText = content.findViewById(R.id.timerText);
+        MaterialButton stopButton = content.findViewById(R.id.timerStopButton);
+
+        titleText.setText("Push ups · " + formatNumber(target) + " reps target");
+        counterText.setText(formatNumber(startAccomplish) + " / " + formatNumber(target));
+
+        AlertDialog dialog = new AlertDialog.Builder(requireContext())
+                .setView(content)
+                .setCancelable(false)
+                .create();
+
+        final float maxRange = proximity.getMaximumRange();
+        final int[] state = {0};
+        final double[] accomplish = {startAccomplish};
+        final SensorManager mgr = sensorManager;
+
+        SensorEventListener listener = new SensorEventListener() {
+            @Override
+            public void onSensorChanged(SensorEvent event) {
+                boolean near = event.values[0] < maxRange;
+                if (near && state[0] == 0) {
+                    state[0] = 1;
+                } else if (!near && state[0] == 1) {
+                    state[0] = 0;
+                    accomplish[0] = Math.min(target, accomplish[0] + 1);
+                    counterText.setText(formatNumber(accomplish[0]) + " / " + formatNumber(target));
+                    workoutsRef.child(key).child("userAccomplish").setValue(accomplish[0]);
+
+                    if (accomplish[0] >= target) {
+                        mgr.unregisterListener(this);
+                        activeSensorListener = null;
+                        if (dialog.isShowing()) dialog.dismiss();
+                        if (isAdded()) {
+                            Toast.makeText(requireContext(), "Workout complete!", Toast.LENGTH_SHORT).show();
+                        }
+                        activeDialog = null;
+                    }
+                }
+            }
+
+            @Override
+            public void onAccuracyChanged(Sensor sensor, int accuracy) {}
+        };
+
+        stopButton.setOnClickListener(v -> {
+            mgr.unregisterListener(listener);
+            activeSensorListener = null;
+            dialog.dismiss();
+            activeDialog = null;
+        });
+
+        mgr.registerListener(listener, proximity, SensorManager.SENSOR_DELAY_NORMAL);
+        activeSensorListener = listener;
+        activeDialog = dialog;
+        dialog.show();
+    }
+
+    private void openRunningTracker(String key, Workout w) {
+        if (sensorManager == null) {
+            sensorManager = (SensorManager) requireContext().getSystemService(Context.SENSOR_SERVICE);
+        }
+        Sensor stepCounter = sensorManager == null ? null
+                : sensorManager.getDefaultSensor(Sensor.TYPE_STEP_COUNTER);
+        if (stepCounter == null) {
+            Toast.makeText(requireContext(), "Step counter not available", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        double startAccomplish = w.userAccomplish;
+        double target = w.userTarget;
+        if (target - startAccomplish <= 0) return;
+
+        LayoutInflater inflater = LayoutInflater.from(requireContext());
+        View content = inflater.inflate(R.layout.dialog_plank_timer, null, false);
+        TextView titleText = content.findViewById(R.id.timerTitle);
+        TextView counterText = content.findViewById(R.id.timerText);
+        MaterialButton stopButton = content.findViewById(R.id.timerStopButton);
+
+        titleText.setText("Running · " + formatNumber(target) + " km target");
+        counterText.setText(formatKm(startAccomplish) + " / " + formatKm(target));
+
+        AlertDialog dialog = new AlertDialog.Builder(requireContext())
+                .setView(content)
+                .setCancelable(false)
+                .create();
+
+        final float[] baselineSteps = {-1f};
+        final double[] accomplish = {startAccomplish};
+        final SensorManager mgr = sensorManager;
+
+        SensorEventListener listener = new SensorEventListener() {
+            @Override
+            public void onSensorChanged(SensorEvent event) {
+                float total = event.values[0];
+                if (baselineSteps[0] < 0) {
+                    baselineSteps[0] = total;
+                    return;
+                }
+                float deltaSteps = total - baselineSteps[0];
+                double deltaKm = deltaSteps * STRIDE_METERS_PER_STEP / 1000.0;
+                double newAccomplish = Math.min(target, startAccomplish + deltaKm);
+                accomplish[0] = newAccomplish;
+                counterText.setText(formatKm(newAccomplish) + " / " + formatKm(target));
+                workoutsRef.child(key).child("userAccomplish").setValue(newAccomplish);
+
+                if (newAccomplish >= target) {
+                    mgr.unregisterListener(this);
+                    activeSensorListener = null;
+                    if (dialog.isShowing()) dialog.dismiss();
+                    if (isAdded()) {
+                        Toast.makeText(requireContext(), "Workout complete!", Toast.LENGTH_SHORT).show();
+                    }
+                    activeDialog = null;
+                }
+            }
+
+            @Override
+            public void onAccuracyChanged(Sensor sensor, int accuracy) {}
+        };
+
+        stopButton.setOnClickListener(v -> {
+            mgr.unregisterListener(listener);
+            activeSensorListener = null;
+            dialog.dismiss();
+            activeDialog = null;
+        });
+
+        mgr.registerListener(listener, stepCounter, SensorManager.SENSOR_DELAY_NORMAL);
+        activeSensorListener = listener;
+        activeDialog = dialog;
+        dialog.show();
+    }
+
     private String formatMmSs(long ms) {
         long totalSec = (ms + 999) / 1000;
         long m = totalSec / 60;
         long s = totalSec % 60;
         return String.format(Locale.US, "%02d:%02d", m, s);
+    }
+
+    private String formatKm(double km) {
+        return String.format(Locale.US, "%.2f km", km);
     }
 
     private String formatNumber(double v) {
