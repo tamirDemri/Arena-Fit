@@ -1,8 +1,10 @@
 package com.example.arenafit;
 
 import android.os.Bundle;
+import android.view.MenuItem;
 
 import androidx.activity.EdgeToEdge;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
@@ -12,8 +14,10 @@ import androidx.fragment.app.Fragment;
 import com.example.arenafit.fragments.CommunityFragment;
 import com.example.arenafit.fragments.MyStatsFragment;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.android.material.navigation.NavigationBarView;
 
-public class HomeActivity extends AppCompatActivity {
+public class HomeActivity extends AppCompatActivity
+        implements NavigationBarView.OnItemSelectedListener {
 
     private BottomNavigationView bottomNavigationView;
 
@@ -33,17 +37,19 @@ public class HomeActivity extends AppCompatActivity {
 
         loadFragment(new MyStatsFragment());
 
-        bottomNavigationView.setOnItemSelectedListener(item -> {
-            Fragment selectedFragment = null;
+        bottomNavigationView.setOnItemSelectedListener(this);
+    }
 
-            if (item.getItemId() == R.id.nav_me) {
-                selectedFragment = new MyStatsFragment();
-            } else if (item.getItemId() == R.id.nav_community) {
-                selectedFragment = new CommunityFragment();
-            }
-
-            return loadFragment(selectedFragment);
-        });
+    @Override
+    public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+        Fragment selectedFragment = null;
+        int id = item.getItemId();
+        if (id == R.id.nav_me) {
+            selectedFragment = new MyStatsFragment();
+        } else if (id == R.id.nav_community) {
+            selectedFragment = new CommunityFragment();
+        }
+        return loadFragment(selectedFragment);
     }
 
     private boolean loadFragment(Fragment fragment) {

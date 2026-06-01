@@ -30,7 +30,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 
-public class CommunityFragment extends Fragment {
+public class CommunityFragment extends Fragment implements View.OnClickListener {
 
     private static final long WEEK_MS = 7L * 24L * 60L * 60L * 1000L;
 
@@ -68,10 +68,10 @@ public class CommunityFragment extends Fragment {
         View hero = view.findViewById(R.id.heroHeader);
         if (hero != null) applyTopInset(hero);
 
-        tabOverall.setOnClickListener(v -> selectTab(TAB_OVERALL));
-        tabPushups.setOnClickListener(v -> selectTab(Workout.TYPE_PUSHUPS));
-        tabPlank.setOnClickListener(v -> selectTab(Workout.TYPE_PLANK));
-        tabRunning.setOnClickListener(v -> selectTab(Workout.TYPE_RUNNING));
+        tabOverall.setOnClickListener(this);
+        tabPushups.setOnClickListener(this);
+        tabPlank.setOnClickListener(this);
+        tabRunning.setOnClickListener(this);
 
         FirebaseUser me = FirebaseAuth.getInstance().getCurrentUser();
         myUid = me == null ? null : me.getUid();
@@ -97,6 +97,15 @@ public class CommunityFragment extends Fragment {
             v.setPadding(v.getPaddingLeft(), basePaddingTop + bars.top, v.getPaddingRight(), v.getPaddingBottom());
             return insets;
         });
+    }
+
+    @Override
+    public void onClick(View v) {
+        int id = v.getId();
+        if (id == R.id.tabOverall)      selectTab(TAB_OVERALL);
+        else if (id == R.id.tabPushups) selectTab(Workout.TYPE_PUSHUPS);
+        else if (id == R.id.tabPlank)   selectTab(Workout.TYPE_PLANK);
+        else if (id == R.id.tabRunning) selectTab(Workout.TYPE_RUNNING);
     }
 
     private void selectTab(String tab) {
@@ -127,10 +136,11 @@ public class CommunityFragment extends Fragment {
                         Workout workout = w.getValue(Workout.class);
                         if (workout == null || workout.type == null) continue;
                         if (workout.timestamp < cutoff) continue;
+                        if (!workout.isCompleted()) continue;
                         switch (workout.type) {
-                            case Workout.TYPE_PUSHUPS: stats.pushups += workout.value; break;
-                            case Workout.TYPE_PLANK: stats.plank += workout.value; break;
-                            case Workout.TYPE_RUNNING: stats.running += workout.value; break;
+                            case Workout.TYPE_PUSHUPS: stats.pushups += workout.userAccomplish; break;
+                            case Workout.TYPE_PLANK: stats.plank += workout.userAccomplish; break;
+                            case Workout.TYPE_RUNNING: stats.running += workout.userAccomplish; break;
                         }
                     }
                     stats.score = stats.pushups * Workout.weight(Workout.TYPE_PUSHUPS)

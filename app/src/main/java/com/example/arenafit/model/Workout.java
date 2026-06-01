@@ -2,20 +2,35 @@ package com.example.arenafit.model;
 
 public class Workout {
     public String type;
-    public double value;
+    public double userTarget;
+    public double userAccomplish;
     public long timestamp;
 
     public Workout() {}
 
-    public Workout(String type, double value, long timestamp) {
+    public Workout(String type, double userTarget, double userAccomplish, long timestamp) {
         this.type = type;
-        this.value = value;
+        this.userTarget = userTarget;
+        this.userAccomplish = userAccomplish;
         this.timestamp = timestamp;
     }
 
     public static final String TYPE_PUSHUPS = "pushups";
     public static final String TYPE_PLANK = "plank";
     public static final String TYPE_RUNNING = "running";
+
+    public boolean isStarted() {
+        return userAccomplish > 0;
+    }
+
+    public boolean isCompleted() {
+        return userTarget > 0 && userAccomplish >= userTarget;
+    }
+
+    public double remaining() {
+        double left = userTarget - userAccomplish;
+        return left < 0 ? 0 : left;
+    }
 
     public static String displayName(String type) {
         if (type == null) return "Workout";

@@ -2,6 +2,7 @@ package com.example.arenafit;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.View;
 import android.widget.ImageButton;
 import android.widget.TextView;
 
@@ -14,12 +15,13 @@ import androidx.core.view.WindowInsetsCompat;
 import com.google.android.material.button.MaterialButton;
 import com.google.firebase.auth.FirebaseAuth;
 
-public class FeedActivity extends AppCompatActivity {
+public class FeedActivity extends AppCompatActivity implements View.OnClickListener {
 
     private FirebaseAuth mAuth;
     private ImageButton logoutButton;
     private TextView feedTitle;
     private MaterialButton getStartedButton;
+    private String username;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,23 +40,28 @@ public class FeedActivity extends AppCompatActivity {
         logoutButton = findViewById(R.id.logout_button);
         getStartedButton = findViewById(R.id.get_started_button);
 
-        String username = getIntent().getStringExtra("username");
+        username = getIntent().getStringExtra("username");
         feedTitle.setText("Hello, " + (username == null ? "athlete" : username));
 
-        logoutButton.setOnClickListener(v -> {
+        logoutButton.setOnClickListener(this);
+        getStartedButton.setOnClickListener(this);
+    }
+
+    @Override
+    public void onClick(View v) {
+        int id = v.getId();
+        if (id == R.id.logout_button) {
             mAuth.signOut();
             Intent intent = new Intent(FeedActivity.this, MainActivity.class);
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
             startActivity(intent);
             finish();
-        });
-
-        getStartedButton.setOnClickListener(v -> {
+        } else if (id == R.id.get_started_button) {
             Intent intent = new Intent(FeedActivity.this, HomeActivity.class);
             intent.putExtra("username", username);
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
             startActivity(intent);
             finish();
-        });
+        }
     }
 }

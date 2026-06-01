@@ -1,8 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:background="?attr/selectableItemBackground"
+    android:clickable="true"
+    android:focusable="true"
     android:gravity="center_vertical"
     android:orientation="horizontal"
     android:paddingTop="10dp"
@@ -32,6 +36,7 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="14dp"
+        android:layout_marginEnd="10dp"
         android:layout_weight="1"
         android:orientation="vertical">
 
@@ -42,26 +47,36 @@
             android:textColor="@color/text_primary"
             android:textSize="15sp"
             android:textStyle="bold"
-            tools:text="Push Ups" />
+            tools:text="Plank" />
 
         <TextView
-            android:id="@+id/row_time"
+            android:id="@+id/row_target"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:textColor="@color/text_secondary"
+            android:textSize="12sp"
+            tools:text="Target: 60 sec" />
+
+        <TextView
+            android:id="@+id/row_progress"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="2dp"
             android:textColor="@color/text_muted"
             android:textSize="12sp"
-            tools:text="2 hours ago" />
+            tools:text="25 / 60 sec · 35 sec left" />
 
     </LinearLayout>
 
     <TextView
-        android:id="@+id/row_value"
+        android:id="@+id/row_state_label"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textColor="@color/text_primary"
-        android:textSize="16sp"
+        android:paddingStart="8dp"
+        android:paddingEnd="4dp"
+        android:textSize="13sp"
         android:textStyle="bold"
-        tools:text="120 reps" />
+        tools:text="Not started" />
 
 </LinearLayout>
