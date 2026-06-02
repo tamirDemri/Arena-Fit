@@ -2,4 +2,41 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+
+    <!-- Brand palette -->
+    <color name="brand_primary">#6366F1</color>
+    <color name="brand_primary_dark">#4F46E5</color>
+    <color name="brand_accent">#06B6D4</color>
+    <color name="brand_gradient_start">#6366F1</color>
+    <color name="brand_gradient_end">#06B6D4</color>
+
+    <!-- Surfaces -->
+    <color name="bg_app">#F5F7FB</color>
+    <color name="surface">#FFFFFF</color>
+    <color name="surface_muted">#F1F5F9</color>
+    <color name="surface_outline">#E2E8F0</color>
+
+    <!-- Text -->
+    <color name="text_primary">#0F172A</color>
+    <color name="text_secondary">#475569</color>
+    <color name="text_muted">#94A3B8</color>
+    <color name="text_inverse">#FFFFFF</color>
+
+    <!-- Status / accents -->
+    <color name="success">#10B981</color>
+    <color name="warning">#F59E0B</color>
+    <color name="danger">#EF4444</color>
+
+    <!-- Workout tints -->
+    <color name="tint_pushups">#FEE2E2</color>
+    <color name="tint_pushups_strong">#EF4444</color>
+    <color name="tint_plank">#DBEAFE</color>
+    <color name="tint_plank_strong">#3B82F6</color>
+    <color name="tint_running">#DCFCE7</color>
+    <color name="tint_running_strong">#10B981</color>
+
+    <!-- Rank highlights -->
+    <color name="rank_gold">#F59E0B</color>
+    <color name="rank_silver">#94A3B8</color>
+    <color name="rank_bronze">#B45309</color>
 </resources>
